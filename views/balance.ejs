@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  
+  <!-- Подключаем шрифты -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Подключаем Telegram Widget API -->
+  <script async src="https://telegram.org/js/telegram-widget.js"></script>
+  
+  <!-- Подключаем Tailwind CSS -->
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <!-- Фавиконка -->
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon">
+</head>
+<body class="bg-telegram-white min-h-screen flex flex-col">
+  <!-- Шапка сайта -->
+  <header class="bg-telegram-blue text-white p-4 shadow-md">
+    <div class="container mx-auto flex justify-between items-center">
+      <a href="/" class="text-2xl font-bold flex items-center">
+        <span class="mr-2">🎁</span> GIFTEX
+      </a>
+      
+      <nav class="flex items-center space-x-4">
+        <% if (locals.user) { %>
+          <a href="/profile" class="hover:underline flex items-center">
+            <% if (user.photoUrl) { %>
+              <img src="<%= user.photoUrl %>" alt="<%= user.firstName %>" class="w-8 h-8 rounded-full mr-2">
+            <% } %>
+            <%= user.firstName %>
+          </a>
+          <a href="/balance" class="hover:underline">Баланс</a>
+          <a href="/auth/logout" class="bg-white text-telegram-blue px-4 py-2 rounded-md hover:bg-gray-100 transition">Выйти</a>
+        <% } else { %>
+          <a href="/auth/telegram" class="bg-white text-telegram-blue px-4 py-2 rounded-md hover:bg-gray-100 transition">Войти через Telegram</a>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Основное содержимое -->
+  <main class="flex-grow">
+    <div class="min-h-screen py-10 px-4">
+      <div class="container mx-auto max-w-4xl">
+        <div class="bg-white shadow-xl rounded-lg overflow-hidden">
+          <!-- Шапка страницы -->
+          <div class="bg-telegram-blue text-white p-6">
+            <h1 class="text-2xl font-bold text-center">Баланс аккаунта</h1>
+          </div>
+          
+          <!-- Информация о балансе -->
+          <div class="p-6">
+            <div class="mb-8 text-center">
+              <p class="text-gray-600 mb-2">Текущий баланс</p>
+              <div class="text-5xl font-bold text-telegram-blue"><%= balance %> ₽</div>
+            </div>
+            
+            <!-- Методы пополнения -->
+            <div class="mb-8">
+              <h2 class="text-xl font-bold mb-4 text-telegram-blue text-center">Пополнить баланс</h2>
+              
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <button class="p-4 border border-gray-300 rounded-lg hover:border-telegram-blue hover:bg-gray-50 transition flex flex-col items-center">
+                  <span class="text-2xl mb-2">💳</span>
+                  <span class="font-medium">Банковская карта</span>
+                </button>
+                <button class="p-4 border border-gray-300 rounded-lg hover:border-telegram-blue hover:bg-gray-50 transition flex flex-col items-center">
+                  <span class="text-2xl mb-2">📱</span>
+                  <span class="font-medium">Электронный кошелек</span>
+                </button>
+                <button class="p-4 border border-gray-300 rounded-lg hover:border-telegram-blue hover:bg-gray-50 transition flex flex-col items-center">
+                  <span class="text-2xl mb-2">💰</span>
+                  <span class="font-medium">Криптовалюта</span>
+                </button>
+              </div>
+              
+              <!-- Выбор суммы -->
+              <div class="mb-6">
+                <label class="block text-gray-700 mb-2 font-medium">Выберите сумму пополнения</label>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <button class="py-2 px-4 border border-gray-300 rounded-md hover:border-telegram-blue hover:bg-gray-50 transition">100 ₽</button>
+                  <button class="py-2 px-4 border border-gray-300 rounded-md hover:border-telegram-blue hover:bg-gray-50 transition">200 ₽</button>
+                  <button class="py-2 px-4 border border-gray-300 rounded-md hover:border-telegram-blue hover:bg-gray-50 transition">500 ₽</button>
+                  <button class="py-2 px-4 border border-gray-300 rounded-md hover:border-telegram-blue hover:bg-gray-50 transition">1000 ₽</button>
+                </div>
+              </div>
+              
+              <!-- Произвольная сумма -->
+              <div class="mb-6">
+                <label for="custom-amount" class="block text-gray-700 mb-2 font-medium">Или введите произвольную сумму</label>
+                <div class="flex">
+                  <input type="number" id="custom-amount" min="10" placeholder="Введите сумму" class="flex-grow border border-gray-300 rounded-l-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-telegram-blue focus:border-transparent">
+                  <button class="bg-telegram-blue hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-r-md transition">
+                    Пополнить
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- История операций -->
+            <div class="mb-8">
+              <h2 class="text-xl font-bold mb-4 text-telegram-blue">История операций</h2>
+              
+              <div class="border rounded-lg overflow-hidden">
+                <div class="bg-gray-50 p-4 border-b text-sm font-medium grid grid-cols-3">
+                  <div>Дата</div>
+                  <div>Операция</div>
+                  <div class="text-right">Сумма</div>
+                </div>
+                
+                <div class="p-4 border-b text-sm grid grid-cols-3">
+                  <div class="text-gray-600"><%= new Date().toLocaleDateString() %></div>
+                  <div>Регистрация</div>
+                  <div class="text-right font-medium">+0 ₽</div>
+                </div>
+                
+                <div class="p-4 text-center text-gray-500 text-sm">
+                  Других операций пока нет
+                </div>
+              </div>
+            </div>
+            
+            <!-- Действия -->
+            <div class="flex justify-center">
+              <a href="/profile" class="bg-telegram-blue hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition">
+                Вернуться в профиль
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Обработчики для кнопок выбора суммы
+        const amountButtons = document.querySelectorAll('.grid-cols-4 button');
+        const customAmountInput = document.getElementById('custom-amount');
+        
+        amountButtons.forEach(button => {
+          button.addEventListener('click', function() {
+            // Снимаем выделение со всех кнопок
+            amountButtons.forEach(btn => {
+              btn.classList.remove('bg-telegram-blue', 'text-white');
+              btn.classList.add('hover:bg-gray-50');
+            });
+            
+            // Выделяем нажатую кнопку
+            this.classList.add('bg-telegram-blue', 'text-white');
+            this.classList.remove('hover:bg-gray-50');
+            
+            // Устанавливаем значение в поле ввода
+            customAmountInput.value = this.innerText.replace(' ₽', '');
+          });
+        });
+      });
+    </script>
+  </main>
+
+  <!-- Подвал сайта -->
+  <footer class="bg-telegram-gray py-4 mt-8">
+    <div class="container mx-auto text-center text-gray-700">
+      <p>&copy; <%= new Date().getFullYear() %> GIFTEX. Все права защищены.</p>
+      <p class="mt-2 text-sm">Этот сайт не является официальным проектом Telegram.</p>
+    </div>
+  </footer>
+
+  <!-- Общие скрипты -->
+  <script src="/js/app.js"></script>
+</body>
+</html> 

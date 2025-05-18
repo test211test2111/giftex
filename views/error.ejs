@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  
+  <!-- Подключаем шрифты -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Подключаем Tailwind CSS -->
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <!-- Фавиконка -->
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon">
+</head>
+<body class="bg-telegram-white min-h-screen flex flex-col">
+  <!-- Шапка сайта -->
+  <header class="bg-telegram-blue text-white p-4 shadow-md">
+    <div class="container mx-auto flex justify-between items-center">
+      <a href="/" class="text-2xl font-bold flex items-center">
+        <span class="mr-2">🎁</span> GIFTEX
+      </a>
+    </div>
+  </header>
+
+  <!-- Основное содержимое -->
+  <main class="flex-grow">
+    <div class="min-h-screen flex flex-col items-center justify-center py-10 px-4">
+      <div class="text-center">
+        <div class="text-6xl mb-6 text-telegram-blue">😕</div>
+        <h1 class="text-3xl font-bold mb-4 text-telegram-blue"><%= title %></h1>
+        <p class="text-lg text-gray-700 mb-8"><%= message %></p>
+        <a href="/" class="bg-telegram-blue hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition">Вернуться на главную</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Подвал сайта -->
+  <footer class="bg-telegram-gray py-4 mt-8">
+    <div class="container mx-auto text-center text-gray-700">
+      <p>&copy; <%= new Date().getFullYear() %> GIFTEX. Все права защищены.</p>
+      <p class="mt-2 text-sm">Этот сайт не является официальным проектом Telegram.</p>
+    </div>
+  </footer>
+
+  <!-- Общие скрипты -->
+  <script src="/js/app.js"></script>
+</body>
+</html> 

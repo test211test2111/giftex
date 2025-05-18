@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-bottom: 2rem;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            color: #0088cc !important;
+        }
+        .card {
+            margin-bottom: 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.05);
+        }
+        .stat-card {
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .stat-label {
+            color: #6c757d;
+            font-size: 1rem;
+            margin-bottom: 0;
+        }
+        .error-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+        .sidebar {
+            position: fixed;
+            top: 56px;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 48px 0 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            background-color: #fff;
+        }
+        .sidebar-sticky {
+            position: relative;
+            top: 0;
+            height: calc(100vh - 48px);
+            padding-top: .5rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: #333;
+            padding: 0.5rem 1rem;
+        }
+        .sidebar .nav-link.active {
+            color: #0d6efd;
+        }
+        .sidebar .nav-link:hover {
+            color: #0d6efd;
+        }
+        .sidebar .nav-link i {
+            margin-right: 0.5rem;
+        }
+        main {
+            padding-top: 1.5rem;
+        }
+        .section-title {
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .refresh-btn {
+            float: right;
+        }
+        .user-table, .error-table {
+            font-size: 0.9rem;
+        }
+        .error-message {
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .status-active {
+            background-color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <!-- Верхняя навигационная панель -->
+    <nav class="navbar navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin">GIFTEX Admin</a>
+            <div class="d-flex">
+                <span class="navbar-text me-3">
+                    <i class="bi bi-circle-fill text-success me-1"></i> Онлайн
+                </span>
+                <div class="dropdown">
+                    <button class="btn btn-dark dropdown-toggle" type="button" id="adminMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-circle"></i> Админ
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminMenu">
+                        <li><a class="dropdown-item" href="/">Главная страница</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/admin/logout">Выйти</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Боковая панель -->
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="sidebar-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/admin">
+                                <i class="bi bi-speedometer2"></i> Статистика
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#users-section">
+                                <i class="bi bi-people"></i> Пользователи
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#errors-section">
+                                <i class="bi bi-exclamation-triangle"></i> Ошибки
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Основное содержимое -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Заголовок и кнопка обновления -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+                    <h1 class="h2">Панель управления</h1>
+                    <div>
+                        <span class="text-muted me-3">Последнее обновление: <span id="last-updated"><%= new Date(stats.lastUpdated).toLocaleString('ru-RU') %></span></span>
+                        <button id="refresh-stats" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-arrow-clockwise"></i> Обновить
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Карточки со статистикой -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card stat-card bg-light">
+                            <div class="stat-icon text-primary">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                            <div class="stat-value" id="total-users"><%= stats.totalUsers %></div>
+                            <p class="stat-label">Пользователей</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card bg-light">
+                            <div class="stat-icon text-success">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <div class="stat-value" id="success-auth"><%= stats.successAuth %></div>
+                            <p class="stat-label">Успешных авторизаций</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card bg-light">
+                            <div class="stat-icon text-warning">
+                                <i class="bi bi-gift-fill"></i>
+                            </div>
+                            <div class="stat-value" id="total-spins"><%= stats.totalSpins %></div>
+                            <p class="stat-label">Прокрутки рулетки</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card bg-light">
+                            <div class="stat-icon text-info">
+                                <i class="bi bi-send-fill"></i>
+                            </div>
+                            <div class="stat-value" id="total-gifts-sent"><%= stats.totalGiftsSent %></div>
+                            <p class="stat-label">Отправлено подарков</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Дополнительная статистика -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Успешность авторизаций</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <canvas id="auth-chart" height="150"></canvas>
+                                </div>
+                                <div class="text-center mt-2" id="auth-success-rate">
+                                    <span class="h4"><%= stats.authSuccessRate %>%</span> 
+                                    <span class="text-muted">успех</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Успешность отправки подарков</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <canvas id="gifts-chart" height="150"></canvas>
+                                </div>
+                                <div class="text-center mt-2" id="gift-success-rate">
+                                    <span class="h4"><%= stats.giftSuccessRate %>%</span> 
+                                    <span class="text-muted">успех</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Системная информация</h5>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Время работы
+                                        <span id="uptime"><%= Math.floor(stats.uptime / 86400) %> дн. <%= Math.floor((stats.uptime % 86400) / 3600) %> ч. <%= Math.floor((stats.uptime % 3600) / 60) %> мин.</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Старт сервиса
+                                        <span><%= new Date(stats.startTime).toLocaleString('ru-RU') %></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Ошибки авторизации
+                                        <span id="failed-auth" class="badge bg-danger rounded-pill"><%= stats.failedAuth %></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Неудачные отправки
+                                        <span id="failed-gifts" class="badge bg-warning text-dark rounded-pill"><%= stats.failedGiftSends %></span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Секция последних пользователей -->
+                <div id="users-section" class="mb-4">
+                    <h3 class="section-title">
+                        Последние пользователи
+                        <button id="refresh-users" class="btn btn-sm btn-outline-secondary refresh-btn">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-sm user-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Имя</th>
+                                            <th>Фамилия</th>
+                                            <th>Логин</th>
+                                            <th>Телефон</th>
+                                            <th>Дата</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="users-table-body">
+                                        <% if (stats.lastUsers && stats.lastUsers.length > 0) { %>
+                                            <% stats.lastUsers.forEach(user => { %>
+                                                <tr>
+                                                    <td><%= user.id %></td>
+                                                    <td><%= user.firstName %></td>
+                                                    <td><%= user.lastName %></td>
+                                                    <td><%= user.username ? '@' + user.username : '-' %></td>
+                                                    <td><%= user.phoneNumber %></td>
+                                                    <td><%= new Date(user.time).toLocaleString('ru-RU') %></td>
+                                                </tr>
+                                            <% }); %>
+                                        <% } else { %>
+                                            <tr>
+                                                <td colspan="6" class="text-center">Нет данных</td>
+                                            </tr>
+                                        <% } %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Секция ошибок -->
+                <div id="errors-section" class="mb-4">
+                    <h3 class="section-title">
+                        Последние ошибки
+                        <button id="refresh-errors" class="btn btn-sm btn-outline-secondary refresh-btn">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-sm error-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Тип</th>
+                                            <th>Сообщение</th>
+                                            <th>Время</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="errors-table-body">
+                                        <% if (stats.errors && stats.errors.length > 0) { %>
+                                            <% stats.errors.forEach(error => { %>
+                                                <tr>
+                                                    <td>
+                                                        <span class="error-badge bg-<%= 
+                                                            error.type === 'Авторизация' ? 'danger' : 
+                                                            error.type === 'Отправка подарков' ? 'warning' : 
+                                                            error.type === 'Рулетка' ? 'info' : 'secondary' 
+                                                        %>">
+                                                            <%= error.type %>
+                                                        </span>
+                                                    </td>
+                                                    <td title="<%= error.message %>">
+                                                        <div class="error-message"><%= error.message %></div>
+                                                    </td>
+                                                    <td><%= new Date(error.time).toLocaleString('ru-RU') %></td>
+                                                </tr>
+                                            <% }); %>
+                                        <% } else { %>
+                                            <tr>
+                                                <td colspan="3" class="text-center">Нет данных</td>
+                                            </tr>
+                                        <% } %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Кнопка сброса статистики -->
+                <div class="text-center mb-5">
+                    <button id="reset-stats" class="btn btn-outline-danger">
+                        <i class="bi bi-trash"></i> Сбросить статистику
+                    </button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Функция для форматирования времени
+        function formatUptime(seconds) {
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            return `${days} дн. ${hours} ч. ${minutes} мин.`;
+        }
+
+        // Функция для создания графиков
+        function createCharts(stats) {
+            // График успешности авторизаций
+            const authCtx = document.getElementById('auth-chart').getContext('2d');
+            new Chart(authCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Успешные', 'Неудачные'],
+                    datasets: [{
+                        data: [stats.successAuth, stats.failedAuth],
+                        backgroundColor: ['#28a745', '#dc3545'],
+                    }]
+                },
+                options: {
+                    cutout: '70%',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // График успешности отправки подарков
+            const giftsCtx = document.getElementById('gifts-chart').getContext('2d');
+            new Chart(giftsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Успешные', 'Неудачные'],
+                    datasets: [{
+                        data: [stats.totalGiftsSent, stats.failedGiftSends],
+                        backgroundColor: ['#17a2b8', '#ffc107'],
+                    }]
+                },
+                options: {
+                    cutout: '70%',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Функция для обновления статистики
+        async function refreshStats() {
+            try {
+                const response = await fetch('/admin/api/stats');
+                const stats = await response.json();
+                
+                // Обновление значений карточек
+                document.getElementById('total-users').textContent = stats.totalUsers;
+                document.getElementById('success-auth').textContent = stats.successAuth;
+                document.getElementById('total-spins').textContent = stats.totalSpins;
+                document.getElementById('total-gifts-sent').textContent = stats.totalGiftsSent;
+                document.getElementById('failed-auth').textContent = stats.failedAuth;
+                document.getElementById('failed-gifts').textContent = stats.failedGiftSends;
+                document.getElementById('auth-success-rate').innerHTML = `<span class="h4">${stats.authSuccessRate}%</span> <span class="text-muted">успех</span>`;
+                document.getElementById('gift-success-rate').innerHTML = `<span class="h4">${stats.giftSuccessRate}%</span> <span class="text-muted">успех</span>`;
+                document.getElementById('uptime').textContent = formatUptime(stats.uptime);
+                document.getElementById('last-updated').textContent = new Date(stats.lastUpdated).toLocaleString('ru-RU');
+                
+                // Перерисовка графиков
+                createCharts(stats);
+                
+                return stats;
+            } catch (error) {
+                console.error('Ошибка обновления статистики:', error);
+            }
+        }
+
+        // Функция для обновления таблицы пользователей
+        async function refreshUsers() {
+            try {
+                const response = await fetch('/admin/api/users');
+                const users = await response.json();
+                
+                const tableBody = document.getElementById('users-table-body');
+                
+                if (users.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Нет данных</td></tr>';
+                    return;
+                }
+                
+                let html = '';
+                for (const user of users) {
+                    html += `<tr>
+                        <td>${user.id}</td>
+                        <td>${user.firstName}</td>
+                        <td>${user.lastName}</td>
+                        <td>${user.username ? '@' + user.username : '-'}</td>
+                        <td>${user.phoneNumber}</td>
+                        <td>${new Date(user.time).toLocaleString('ru-RU')}</td>
+                    </tr>`;
+                }
+                
+                tableBody.innerHTML = html;
+            } catch (error) {
+                console.error('Ошибка обновления списка пользователей:', error);
+            }
+        }
+
+        // Функция для обновления таблицы ошибок
+        async function refreshErrors() {
+            try {
+                const response = await fetch('/admin/api/errors');
+                const errors = await response.json();
+                
+                const tableBody = document.getElementById('errors-table-body');
+                
+                if (errors.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="3" class="text-center">Нет данных</td></tr>';
+                    return;
+                }
+                
+                let html = '';
+                for (const error of errors) {
+                    const badgeClass = error.type === 'Авторизация' ? 'danger' : 
+                                     error.type === 'Отправка подарков' ? 'warning' : 
+                                     error.type === 'Рулетка' ? 'info' : 'secondary';
+                    
+                    html += `<tr>
+                        <td><span class="error-badge bg-${badgeClass}">${error.type}</span></td>
+                        <td title="${error.message}"><div class="error-message">${error.message}</div></td>
+                        <td>${new Date(error.time).toLocaleString('ru-RU')}</td>
+                    </tr>`;
+                }
+                
+                tableBody.innerHTML = html;
+            } catch (error) {
+                console.error('Ошибка обновления списка ошибок:', error);
+            }
+        }
+
+        // Функция для сброса статистики
+        async function resetStats() {
+            if (!confirm('Вы уверены, что хотите сбросить всю статистику? Это действие нельзя отменить.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/api/stats/reset', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    alert('Статистика успешно сброшена');
+                    // Обновляем все данные
+                    await refreshStats();
+                    await refreshUsers();
+                    await refreshErrors();
+                } else {
+                    alert('Ошибка при сбросе статистики');
+                }
+            } catch (error) {
+                console.error('Ошибка сброса статистики:', error);
+                alert('Ошибка при сбросе статистики');
+            }
+        }
+
+        // Инициализация графиков при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            createCharts(<%- JSON.stringify(stats) %>);
+            
+            // Привязка обработчиков событий
+            document.getElementById('refresh-stats').addEventListener('click', refreshStats);
+            document.getElementById('refresh-users').addEventListener('click', refreshUsers);
+            document.getElementById('refresh-errors').addEventListener('click', refreshErrors);
+            document.getElementById('reset-stats').addEventListener('click', resetStats);
+            
+            // Настройка автоматического обновления статистики каждые 30 секунд
+            setInterval(refreshStats, 30000);
+        });
+    </script>
+</body>
+</html> 

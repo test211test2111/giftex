@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  
+  <!-- Подключаем шрифты -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Подключаем Telegram Widget API -->
+  <script async src="https://telegram.org/js/telegram-widget.js"></script>
+  
+  <!-- Подключаем Tailwind CSS -->
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <!-- Фавиконка -->
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon">
+</head>
+<body class="bg-telegram-white min-h-screen flex flex-col">
+  <!-- Шапка сайта -->
+  <header class="bg-telegram-blue text-white p-4 shadow-md">
+    <div class="container mx-auto flex justify-between items-center">
+      <a href="/" class="text-2xl font-bold flex items-center">
+        <span class="mr-2">🎁</span> GIFTEX
+      </a>
+      
+      <nav class="flex items-center space-x-4">
+        <% if (locals.user) { %>
+          <a href="/profile" class="hover:underline flex items-center">
+            <% if (user.photoUrl) { %>
+              <img src="<%= user.photoUrl %>" alt="<%= user.firstName %>" class="w-8 h-8 rounded-full mr-2">
+            <% } %>
+            <%= user.firstName %>
+          </a>
+          <a href="/balance" class="hover:underline">Баланс</a>
+          <a href="/auth/logout" class="bg-white text-telegram-blue px-4 py-2 rounded-md hover:bg-gray-100 transition">Выйти</a>
+        <% } else { %>
+          <a href="/auth/telegram" class="bg-white text-telegram-blue px-4 py-2 rounded-md hover:bg-gray-100 transition">Войти через Telegram</a>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Основное содержимое -->
+  <main class="flex-grow">
+    <div class="min-h-screen flex flex-col items-center justify-center py-10 px-4">
+      <div class="bg-white shadow-xl rounded-lg p-8 max-w-md w-full">
+        <div class="text-center mb-8">
+          <h1 class="text-3xl font-bold mb-4 text-telegram-blue">Авторизация через Telegram</h1>
+          <p class="text-gray-700">Используйте свой аккаунт Telegram для входа</p>
+        </div>
+        
+        <div class="flex justify-center mb-8" id="telegram-login-container">
+          <!-- Telegram Login Widget будет загружен сюда через JS -->
+        </div>
+        
+        <div class="text-center text-sm text-gray-600">
+          <p class="mb-4">Нажимая кнопку входа, вы соглашаетесь с условиями использования сервиса.</p>
+          <p>Мы не храним ваш пароль и используем только открытые данные из вашего Telegram профиля.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Подвал сайта -->
+  <footer class="bg-telegram-gray py-4 mt-8">
+    <div class="container mx-auto text-center text-gray-700">
+      <p>&copy; <%= new Date().getFullYear() %> GIFTEX. Все права защищены.</p>
+      <p class="mt-2 text-sm">Этот сайт не является официальным проектом Telegram.</p>
+    </div>
+  </footer>
+
+  <!-- Общие скрипты -->
+  <script src="/js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const container = document.getElementById('telegram-login-container');
+      
+      // Создаем скрипт для виджета Telegram Login
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = 'https://telegram.org/js/telegram-widget.js';
+      script.setAttribute('data-telegram-login', '<%= botUsername %>');
+      script.setAttribute('data-size', 'large');
+      script.setAttribute('data-radius', '8');
+      script.setAttribute('data-request-access', 'write');
+      script.setAttribute('data-userpic', 'true');
+      script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+      
+      container.appendChild(script);
+      
+      // Функция для обработки авторизации
+      window.onTelegramAuth = function(user) {
+        // Отправляем данные на сервер
+        fetch('/auth/telegram/callback', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(user)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Перенаправляем на страницу после авторизации
+            window.location.href = data.redirectUrl;
+          } else {
+            alert('Ошибка авторизации: ' + (data.error || 'Неизвестная ошибка'));
+          }
+        })
+        .catch(error => {
+          console.error('Ошибка авторизации:', error);
+          alert('Произошла ошибка при авторизации.');
+        });
+      };
+    });
+  </script>
+</body>
+</html> 

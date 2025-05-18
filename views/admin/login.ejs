@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 3rem;
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: #fff;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .login-form {
+            margin-bottom: 1rem;
+        }
+        .brand-logo {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #0088cc;
+            margin-bottom: 1rem;
+        }
+        .alert-danger {
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="brand-logo">GIFTEX</div>
+                <h3>Вход в панель управления</h3>
+                <p class="text-muted">Введите учетные данные администратора</p>
+            </div>
+            
+            <% if (error) { %>
+                <div class="alert alert-danger">
+                    Неверное имя пользователя или пароль
+                </div>
+            <% } %>
+            
+            <form class="login-form" action="/admin/login" method="POST">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Имя пользователя</label>
+                    <input type="text" class="form-control" id="username" name="username" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Пароль</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">Войти</button>
+                </div>
+            </form>
+            
+            <div class="text-center mt-3">
+                <a href="/" class="text-decoration-none">Вернуться на главную</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

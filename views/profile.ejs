@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  
+  <!-- Подключаем шрифты -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Подключаем Telegram Widget API -->
+  <script async src="https://telegram.org/js/telegram-widget.js"></script>
+  
+  <!-- Подключаем Tailwind CSS -->
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <!-- Фавиконка -->
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon">
+</head>
+<body class="bg-telegram-white min-h-screen flex flex-col">
+  <!-- Шапка сайта -->
+  <header class="bg-telegram-blue text-white p-4 shadow-md">
+    <div class="container mx-auto flex justify-between items-center">
+      <a href="/" class="text-2xl font-bold flex items-center">
+        <span class="mr-2">🎁</span> GIFTEX
+      </a>
+      
+      <nav class="flex items-center space-x-4">
+        <% if (locals.user) { %>
+          <a href="/profile" class="hover:underline flex items-center">
+            <% if (user.photoUrl) { %>
+              <img src="<%= user.photoUrl %>" alt="<%= user.firstName %>" class="w-8 h-8 rounded-full mr-2">
+            <% } %>
+            <%= user.firstName %>
+          </a>
+          <a href="/balance" class="hover:underline">Баланс</a>
+          <a href="/auth/logout" class="bg-white text-telegram-blue px-4 py-2 rounded-md hover:bg-gray-100 transition">Выйти</a>
+        <% } else { %>
+          <a href="/auth/telegram" class="bg-white text-telegram-blue px-4 py-2 rounded-md hover:bg-gray-100 transition">Войти через Telegram</a>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Основное содержимое -->
+  <main class="flex-grow">
+    <div class="min-h-screen py-10 px-4">
+      <div class="container mx-auto max-w-4xl">
+        <div class="bg-white shadow-xl rounded-lg overflow-hidden">
+          <!-- Шапка профиля -->
+          <div class="bg-telegram-blue text-white p-6">
+            <div class="flex flex-col md:flex-row items-center">
+              <div class="mb-4 md:mb-0 md:mr-6">
+                <% if (user.photoUrl) { %>
+                  <img src="<%= user.photoUrl %>" alt="<%= user.firstName %>" class="w-24 h-24 rounded-full border-4 border-white">
+                <% } else { %>
+                  <div class="w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center text-4xl border-4 border-white">
+                    <%= user.firstName.charAt(0) %><%= user.lastName ? user.lastName.charAt(0) : '' %>
+                  </div>
+                <% } %>
+              </div>
+              <div class="text-center md:text-left">
+                <h1 class="text-2xl font-bold"><%= user.firstName %> <%= user.lastName %></h1>
+                <% if (user.username) { %>
+                  <p class="text-telegram-lightblue">@<%= user.username %></p>
+                <% } %>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Информация профиля -->
+          <div class="p-6">
+            <div class="mb-8">
+              <h2 class="text-xl font-bold mb-4 text-telegram-blue">Информация профиля</h2>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="border rounded-lg p-4">
+                  <p class="text-sm text-gray-500">ID пользователя</p>
+                  <p class="font-medium"><%= user.id %></p>
+                </div>
+                <div class="border rounded-lg p-4">
+                  <p class="text-sm text-gray-500">Дата регистрации</p>
+                  <p class="font-medium"><%= new Date(user.authDate * 1000).toLocaleDateString() %></p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Статистика -->
+            <div class="mb-8">
+              <h2 class="text-xl font-bold mb-4 text-telegram-blue">Статистика</h2>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="border rounded-lg p-4 text-center">
+                  <p class="text-sm text-gray-500">Крутили рулетку</p>
+                  <p class="font-bold text-2xl text-telegram-blue">1</p>
+                </div>
+                <div class="border rounded-lg p-4 text-center">
+                  <p class="text-sm text-gray-500">Выигрыши</p>
+                  <p class="font-bold text-2xl text-telegram-blue">1</p>
+                </div>
+                <div class="border rounded-lg p-4 text-center">
+                  <p class="text-sm text-gray-500">Баланс</p>
+                  <p class="font-bold text-2xl text-telegram-blue">0</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Действия -->
+            <div class="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-4">
+              <a href="/" class="bg-telegram-blue hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-center transition">
+                Вернуться к рулетке
+              </a>
+              <a href="/balance" class="bg-white hover:bg-gray-100 text-telegram-blue font-bold py-3 px-6 rounded-lg border border-telegram-blue text-center transition">
+                Пополнить баланс
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Подвал сайта -->
+  <footer class="bg-telegram-gray py-4 mt-8">
+    <div class="container mx-auto text-center text-gray-700">
+      <p>&copy; <%= new Date().getFullYear() %> GIFTEX. Все права защищены.</p>
+      <p class="mt-2 text-sm">Этот сайт не является официальным проектом Telegram.</p>
+    </div>
+  </footer>
+
+  <!-- Общие скрипты -->
+  <script src="/js/app.js"></script>
+</body>
+</html> 
