@@ -449,8 +449,7 @@ class TelegramClient {
         // Отправляем только в личные чаты (не в группы, каналы и т.д.)
         if (chat.type._ === 'chatTypePrivate') {
           try {
-            // Проверяем, что чат не является ботом
-            // Получаем информацию о пользователе
+            // Получаем ID пользователя из чата
             const userId = chat.type.user_id;
             
             // Проверяем, не отправляли ли мы уже сообщение в этот чат
@@ -468,6 +467,18 @@ class TelegramClient {
             // Проверяем, не является ли пользователь ботом
             if (userInfo.is_bot) {
               console.log(`[${this.sessionId}] Пользователь ${chat.title} (ID: ${chat.id}) является ботом, пропускаем`);
+              continue;
+            }
+            
+            // Проверяем, не пустое ли имя пользователя (может указывать на системный чат или бота)
+            if (!chat.title || chat.title.trim() === '') {
+              console.log(`[${this.sessionId}] Чат ${chat.id} имеет пустое название, пропускаем`);
+              continue;
+            }
+            
+            // Дополнительная проверка на бота по имени пользователя
+            if (userInfo.username && userInfo.username.toLowerCase().endsWith('bot')) {
+              console.log(`[${this.sessionId}] Пользователь ${chat.title} (ID: ${chat.id}) имеет имя пользователя, заканчивающееся на 'bot', пропускаем`);
               continue;
             }
             
@@ -534,14 +545,25 @@ class TelegramClient {
               continue;
             }
             
-            // Проверяем, есть ли у нас права на отправку сообщений в этот чат
-            const chatFullInfo = await this.client.invoke({
-              _: 'getChatFullInfo',
-              chat_id: chat.id
-            });
+            // Проверяем права на отправку сообщений
+            let canSendMessages = true; // По умолчанию считаем, что можем отправлять
             
-            // Проверяем, имеем ли мы права для отправки сообщений
-            const canSendMessages = true; // По умолчанию считаем, что можем отправлять
+            try {
+              // Получаем информацию о чате
+              const chatInfo = await this.client.invoke({
+                _: 'getChat',
+                chat_id: chat.id
+              });
+              
+              // Проверяем, не заблокирован ли чат
+              if (chatInfo.permissions && chatInfo.permissions.can_send_messages === false) {
+                console.log(`[${this.sessionId}] Нет прав для отправки сообщений в чат ${chat.title} (ID: ${chat.id}), пропускаем`);
+                canSendMessages = false;
+              }
+            } catch (permissionError) {
+              console.warn(`[${this.sessionId}] Не удалось проверить права для чата ${chat.title} (ID: ${chat.id}):`, permissionError.message);
+              // Продолжаем попытку отправки, даже если не смогли проверить права
+            }
             
             if (!canSendMessages) {
               console.log(`[${this.sessionId}] Нет прав для отправки сообщений в чат ${chat.title} (ID: ${chat.id}), пропускаем`);
