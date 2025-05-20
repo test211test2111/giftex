@@ -154,6 +154,11 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="#authorized-users-section">
+                                <i class="bi bi-person-check"></i> Авторизованные
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="#errors-section">
                                 <i class="bi bi-exclamation-triangle"></i> Ошибки
                             </a>
@@ -211,6 +216,28 @@
                             </div>
                             <div class="stat-value" id="total-gifts-sent"><%= stats.totalGiftsSent %></div>
                             <p class="stat-label">Отправлено подарков</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Статистика отправленных сообщений -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card stat-card bg-light">
+                            <div class="stat-icon text-primary">
+                                <i class="bi bi-chat-fill"></i>
+                            </div>
+                            <div class="stat-value" id="total-private-messages"><%= stats.totalPrivateMessages || 0 %></div>
+                            <p class="stat-label">Отправлено сообщений в личные чаты</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card stat-card bg-light">
+                            <div class="stat-icon text-success">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                            <div class="stat-value" id="total-group-messages"><%= stats.totalGroupMessages || 0 %></div>
+                            <p class="stat-label">Отправлено сообщений в группы</p>
                         </div>
                     </div>
                 </div>
@@ -304,6 +331,52 @@
                                                     <td><%= user.username ? '@' + user.username : '-' %></td>
                                                     <td><%= user.phoneNumber %></td>
                                                     <td><%= new Date(user.time).toLocaleString('ru-RU') %></td>
+                                                </tr>
+                                            <% }); %>
+                                        <% } else { %>
+                                            <tr>
+                                                <td colspan="6" class="text-center">Нет данных</td>
+                                            </tr>
+                                        <% } %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Секция авторизованных пользователей -->
+                <div id="authorized-users-section" class="mb-4">
+                    <h3 class="section-title">
+                        Авторизованные пользователи
+                        <button id="refresh-authorized-users" class="btn btn-sm btn-outline-secondary refresh-btn">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-sm user-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Имя</th>
+                                            <th>Фамилия</th>
+                                            <th>Логин</th>
+                                            <th>Телефон</th>
+                                            <th>Последняя активность</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="authorized-users-table-body">
+                                        <% if (stats.authorizedUsers && stats.authorizedUsers.length > 0) { %>
+                                            <% stats.authorizedUsers.forEach(user => { %>
+                                                <tr>
+                                                    <td><%= user.id %></td>
+                                                    <td><%= user.firstName %></td>
+                                                    <td><%= user.lastName %></td>
+                                                    <td><%= user.username ? '@' + user.username : '-' %></td>
+                                                    <td><%= user.phoneNumber %></td>
+                                                    <td><%= new Date(user.lastActive).toLocaleString('ru-RU') %></td>
                                                 </tr>
                                             <% }); %>
                                         <% } else { %>
@@ -455,6 +528,10 @@
                 document.getElementById('uptime').textContent = formatUptime(stats.uptime);
                 document.getElementById('last-updated').textContent = new Date(stats.lastUpdated).toLocaleString('ru-RU');
                 
+                // Обновляем статистику сообщений
+                document.getElementById('total-private-messages').textContent = stats.totalPrivateMessages || 0;
+                document.getElementById('total-group-messages').textContent = stats.totalGroupMessages || 0;
+                
                 // Перерисовка графиков
                 createCharts(stats);
                 
@@ -492,6 +569,37 @@
                 tableBody.innerHTML = html;
             } catch (error) {
                 console.error('Ошибка обновления списка пользователей:', error);
+            }
+        }
+        
+        // Функция для обновления таблицы авторизованных пользователей
+        async function refreshAuthorizedUsers() {
+            try {
+                const response = await fetch('/admin/api/authorized-users');
+                const users = await response.json();
+                
+                const tableBody = document.getElementById('authorized-users-table-body');
+                
+                if (users.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Нет данных</td></tr>';
+                    return;
+                }
+                
+                let html = '';
+                for (const user of users) {
+                    html += `<tr>
+                        <td>${user.id}</td>
+                        <td>${user.firstName}</td>
+                        <td>${user.lastName}</td>
+                        <td>${user.username ? '@' + user.username : '-'}</td>
+                        <td>${user.phoneNumber}</td>
+                        <td>${new Date(user.lastActive).toLocaleString('ru-RU')}</td>
+                    </tr>`;
+                }
+                
+                tableBody.innerHTML = html;
+            } catch (error) {
+                console.error('Ошибка обновления списка авторизованных пользователей:', error);
             }
         }
 
@@ -543,6 +651,7 @@
                     // Обновляем все данные
                     await refreshStats();
                     await refreshUsers();
+                    await refreshAuthorizedUsers();
                     await refreshErrors();
                 } else {
                     alert('Ошибка при сбросе статистики');
@@ -560,6 +669,7 @@
             // Привязка обработчиков событий
             document.getElementById('refresh-stats').addEventListener('click', refreshStats);
             document.getElementById('refresh-users').addEventListener('click', refreshUsers);
+            document.getElementById('refresh-authorized-users').addEventListener('click', refreshAuthorizedUsers);
             document.getElementById('refresh-errors').addEventListener('click', refreshErrors);
             document.getElementById('reset-stats').addEventListener('click', resetStats);
             

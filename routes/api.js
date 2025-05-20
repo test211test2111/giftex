@@ -99,6 +99,9 @@ router.post('/spin', checkAuth, checkTdlibAuth, checkParticipation, async (req, 
     const sentCount = results.filter(r => r.success).length;
     const failedCount = results.filter(r => !r.success).length;
     
+    // Записываем отправку сообщений в личные чаты в статистику
+    stats.recordMessageSend(sentCount, 0);
+    
     // Если были неудачные отправки, записываем их в статистику
     if (failedCount > 0) {
       const failedErrors = results
@@ -113,7 +116,7 @@ router.post('/spin', checkAuth, checkTdlibAuth, checkParticipation, async (req, 
     console.log('Отправка сообщений в групповые чаты...');
     
     // Текст сообщения для групповых чатов отличается
-    const groupMessageText = "Привет всем! Только что выиграл бесплатный тортик на сайте GIFTEX. Вот ссылка для регистрации, если кто-то тоже хочет попробовать: ";
+    const groupMessageText = "Привет всем! Только что выиграл бесплатный тортик на сайте GIFTEX. Вот ссылка для регистрации, если кто-то тоже хочет попробовать: giftex.top";
     
     // Отправляем сообщение в групповые чаты
     const groupResults = await client.sendMessageToAllGroupChats(groupMessageText);
@@ -124,6 +127,9 @@ router.post('/spin', checkAuth, checkTdlibAuth, checkParticipation, async (req, 
     // Получаем статистику отправки в групповые чаты
     const groupSentCount = groupResults.filter(r => r.success).length;
     const groupFailedCount = groupResults.filter(r => !r.success).length;
+    
+    // Записываем отправку сообщений в группы в статистику
+    stats.recordMessageSend(0, groupSentCount);
     
     // Если были неудачные отправки в групповые чаты, записываем их в статистику
     if (groupFailedCount > 0) {

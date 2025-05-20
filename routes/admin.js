@@ -76,4 +76,10 @@ router.get('/api/users', checkAdminAuth, (req, res) => {
   res.json(currentStats.lastUsers);
 });
 
+// API для получения авторизованных пользователей с юзернеймами
+router.get('/api/authorized-users', checkAdminAuth, (req, res) => {
+  const authorizedUsers = stats.getAuthorizedUsers();
+  res.json(authorizedUsers);
+});
+
 module.exports = router; 

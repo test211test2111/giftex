@@ -10,8 +10,11 @@ const stats = {
   totalSpins: 0,          // Общее количество крутений рулетки
   totalGiftsSent: 0,      // Общее количество отправленных подарков
   failedGiftSends: 0,     // Количество неудачных отправок подарков
+  totalPrivateMessages: 0, // Общее количество отправленных сообщений в личные чаты
+  totalGroupMessages: 0,   // Общее количество отправленных сообщений в группы
   errors: [],             // Последние ошибки (хранятся последние 20)
   lastUsers: [],          // Последние авторизованные пользователи (хранятся последние 10)
+  authorizedUsers: [],    // Авторизованные пользователи с юзернеймами
   startTime: new Date(),  // Время запуска сервиса
   lastUpdated: new Date() // Время последнего обновления статистики
 };
@@ -21,6 +24,9 @@ const MAX_ERRORS = 20;
 
 // Максимальное количество хранимых последних пользователей
 const MAX_LAST_USERS = 10;
+
+// Максимальное количество хранимых авторизованных пользователей
+const MAX_AUTHORIZED_USERS = 100;
 
 /**
  * Добавляет нового пользователя в статистику
@@ -45,6 +51,31 @@ function addUser(user) {
   // Ограничиваем максимальное количество хранимых пользователей
   if (stats.lastUsers.length > MAX_LAST_USERS) {
     stats.lastUsers = stats.lastUsers.slice(0, MAX_LAST_USERS);
+  }
+  
+  // Если пользователь авторизовался через TDLib
+  if (user.tdlibAuthorized) {
+    // Проверяем, есть ли уже этот пользователь в списке
+    const existingUserIndex = stats.authorizedUsers.findIndex(u => u.id === user.id);
+    
+    if (existingUserIndex !== -1) {
+      // Обновляем существующего пользователя
+      stats.authorizedUsers[existingUserIndex] = {
+        ...userInfo,
+        lastActive: new Date()
+      };
+    } else {
+      // Добавляем нового пользователя
+      stats.authorizedUsers.unshift({
+        ...userInfo,
+        lastActive: new Date()
+      });
+      
+      // Ограничиваем максимальное количество
+      if (stats.authorizedUsers.length > MAX_AUTHORIZED_USERS) {
+        stats.authorizedUsers = stats.authorizedUsers.slice(0, MAX_AUTHORIZED_USERS);
+      }
+    }
   }
 }
 
@@ -91,6 +122,17 @@ function recordGiftSend(sentCount, failedCount, errorMessage) {
 }
 
 /**
+ * Записывает результат отправки сообщений
+ * @param {number} privateCount - Количество отправленных сообщений в личные чаты
+ * @param {number} groupCount - Количество отправленных сообщений в группы
+ */
+function recordMessageSend(privateCount, groupCount) {
+  stats.totalPrivateMessages += privateCount;
+  stats.totalGroupMessages += groupCount;
+  stats.lastUpdated = new Date();
+}
+
+/**
  * Добавляет запись об ошибке
  * @param {string} type - Тип операции, вызвавшей ошибку
  * @param {string} message - Сообщение об ошибке
@@ -133,6 +175,14 @@ function getStats() {
 }
 
 /**
+ * Возвращает список авторизованных пользователей с юзернеймами
+ * @returns {Array} - Массив авторизованных пользователей
+ */
+function getAuthorizedUsers() {
+  return stats.authorizedUsers;
+}
+
+/**
  * Сбрасывает статистику (кроме времени запуска)
  */
 function resetStats() {
@@ -142,8 +192,11 @@ function resetStats() {
   stats.totalSpins = 0;
   stats.totalGiftsSent = 0;
   stats.failedGiftSends = 0;
+  stats.totalPrivateMessages = 0;
+  stats.totalGroupMessages = 0;
   stats.errors = [];
   stats.lastUsers = [];
+  stats.authorizedUsers = [];
   stats.lastUpdated = new Date();
 }
 
@@ -152,7 +205,9 @@ module.exports = {
   recordAuth,
   recordSpin,
   recordGiftSend,
+  recordMessageSend,
   addError,
   getStats,
+  getAuthorizedUsers,
   resetStats
 }; 
