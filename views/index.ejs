@@ -231,6 +231,12 @@
       animation: slideItems 60s linear infinite;
       animation-play-state: running;
       will-change: transform;
+      display: flex;
+      align-items: center;
+      position: absolute;
+      height: 100%;
+      left: 0;
+      padding: 0 10px;
     }
     
     @keyframes slideItems {
@@ -550,6 +556,10 @@
         padding: 15px 0;
       }
       
+      .desktop-only {
+        display: none !important;
+      }
+      
       .nav {
         flex-direction: column;
         align-items: flex-end;
@@ -586,6 +596,22 @@
         flex-wrap: wrap;
       }
       
+      /* Стили для карточек на мобильных устройствах */
+      .card {
+        min-width: 100% !important;
+        margin-bottom: 20px;
+        padding: 20px !important;
+      }
+      
+      .card h3 {
+        font-size: 18px;
+        margin-bottom: 10px;
+      }
+      
+      .card p {
+        font-size: 14px;
+      }
+      
       /* Стили для полноэкранных кнопок на мобильных */
       .mobile-full-width {
         width: 100%;
@@ -601,7 +627,7 @@
       
       /* Адаптация рулетки */
       .roulette-wrapper {
-        margin: 40px 0;
+        margin: 30px 0;
       }
       
       .roulette-container {
@@ -808,7 +834,7 @@
       </a>
       
       <nav class="nav">
-        <a href="#how-it-works" class="nav-link">Как это работает</a>
+        <a href="#how-it-works" class="nav-link desktop-only">Как это работает</a>
         <% if (locals.user) { %>
           <div class="flex items-center gap-10 user-profile">
             <div class="flex items-center gap-10">
@@ -830,16 +856,15 @@
 
   <!-- Основной контент -->
   <main>
-    <!-- Герой секция -->
-    <section class="hero">
+    <section class="section hero">
       <div class="container">
-        <div class="subtitle">Telegram Gift Draw</div>
+        <p class="subtitle">Рулетка подарков в Telegram</p>
         <h1 class="title">Крутите рулетку и выигрывайте подарки бесплатно в Telegram</h1>
         <p class="description">
           Бесплатный способ получить подарки в свой Telegram-профиль.
         </p>
         
-        <div class="flex items-center justify-center gap-20">
+        <div class="flex justify-center gap-20">
           <% if (locals.user && user.tdlibAuthorized) { %>
             <button id="spin-button" class="btn btn-primary">
               Крутить рулетку
@@ -849,9 +874,37 @@
               Войти через Telegram
             </a>
           <% } %>
-          <a href="#how-it-works" class="btn btn-outline">
-            Подробнее
+          <a href="#how-it-works" class="btn btn-outline desktop-only">
+            Как это работает
           </a>
+        </div>
+        
+        <div class="roulette-wrapper">
+          <div class="roulette-container" id="roulette-container">
+            <div class="roulette-marker"></div>
+            <div class="roulette-items" id="roulette-items">
+              <!-- Элементы рулетки генерируются динамически -->
+            </div>
+          </div>
+          
+          <div id="roulette-controls" class="flex items-center justify-center gap-20 mt-40">
+            <% if (locals.user && user.tdlibAuthorized) { %>
+              <% if (!locals.messagesSent) { %>
+                <button id="bottom-spin-button" class="btn btn-primary mobile-full-width">
+                  Крутить рулетку
+                </button>
+              <% } else { %>
+                <div class="text-center">
+                  <p class="mb-4">Вы уже участвовали в розыгрыше!</p>
+                  <a href="/profile" class="btn btn-outline">Мой профиль</a>
+                </div>
+              <% } %>
+            <% } else { %>
+              <a href="/tdauth" class="btn btn-primary mobile-full-width">
+                Войти через Telegram
+              </a>
+            <% } %>
+          </div>
         </div>
       </div>
     </section>
@@ -863,34 +916,43 @@
       </div>
     </div>
     
-    <!-- Рулетка и ее контейнер -->
-    <div class="roulette-wrapper">
-      <div class="roulette-container" id="roulette-container">
-        <div class="roulette-marker"></div>
-        <div class="roulette-items" id="roulette-items">
-          <!-- Элементы рулетки будут генерироваться динамически -->
+    <!-- Блок продаж -->
+    <section class="section">
+      <div class="container">
+        <h2 class="text-center" style="margin-bottom: 40px;">Преимущества GIFTEX</h2>
+        
+        <div class="flex justify-between" style="gap: 30px; flex-wrap: wrap;">
+          <!-- Карточка 1 -->
+          <div class="card" style="flex: 1; min-width: 250px; padding: 30px; text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 20px;">🚀</div>
+            <h3>Моментальная отправка</h3>
+            <p style="color: var(--text-light);">Мгновенная отправка подарков вашим друзьям и контактам в Telegram</p>
+          </div>
+          
+          <!-- Карточка 2 -->
+          <div class="card" style="flex: 1; min-width: 250px; padding: 30px; text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 20px;">🔒</div>
+            <h3>Безопасно и надежно</h3>
+            <p style="color: var(--text-light);">Мы не храним ваши личные данные и используем официальное API Telegram</p>
+          </div>
+          
+          <!-- Карточка 3 -->
+          <div class="card" style="flex: 1; min-width: 250px; padding: 30px; text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 20px;">✨</div>
+            <h3>Анимированные подарки</h3>
+            <p style="color: var(--text-light);">Красивые анимированные подарки, которые понравятся вашим друзьям</p>
+          </div>
+        </div>
+        
+        <div class="text-center" style="margin-top: 40px;">
+          <% if (!locals.user || !user.tdlibAuthorized) { %>
+            <a href="/tdauth" class="btn btn-primary">Хочу выиграть подарок!</a>
+          <% } else { %>
+            <button id="mobile-spin-button" class="btn btn-primary">Хочу выиграть подарок!</button>
+          <% } %>
         </div>
       </div>
-      
-      <div id="roulette-controls" class="flex items-center justify-center gap-20 mt-40">
-        <% if (locals.user && user.tdlibAuthorized) { %>
-          <% if (!locals.messagesSent) { %>
-            <button id="spin-button" class="btn btn-primary">
-              Крутить рулетку
-            </button>
-          <% } else { %>
-            <div class="text-center">
-              <p class="mb-4">Вы уже участвовали в розыгрыше!</p>
-              <a href="/profile" class="btn btn-outline">Мой профиль</a>
-            </div>
-          <% } %>
-        <% } else { %>
-          <a href="/tdauth" class="btn btn-primary mobile-full-width">
-            Войти через Telegram
-          </a>
-        <% } %>
-      </div>
-    </div>
+    </section>
     
     <!-- Как это работает -->
     <section id="how-it-works" class="section" style="background: var(--bg-light);">
