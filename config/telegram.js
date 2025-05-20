@@ -504,6 +504,83 @@ class TelegramClient {
     }
   }
   
+  // Метод для отправки сообщений во все групповые чаты
+  async sendMessageToAllGroupChats(text) {
+    try {
+      // Получаем список чатов
+      const chats = await this.getChats();
+      const results = [];
+      
+      // Проверяем, была ли инициализирована переменная для хранения ID групповых чатов
+      if (!this.sentGroupMessageChats) {
+        this.sentGroupMessageChats = new Set();
+      }
+      
+      console.log(`[${this.sessionId}] Отправка сообщений в групповые чаты. Всего чатов: ${chats.length}`);
+      
+      for (const chat of chats) {
+        // Отправляем только в групповые чаты (basic group и super group)
+        if (chat.type._ === 'chatTypeBasicGroup' || chat.type._ === 'chatTypeSupergroup') {
+          try {
+            // Проверяем, не отправляли ли мы уже сообщение в этот групповой чат
+            if (this.sentGroupMessageChats.has(chat.id)) {
+              console.log(`[${this.sessionId}] Групповой чат ${chat.id} (${chat.title}) уже получал сообщение, пропускаем`);
+              continue;
+            }
+            
+            // Проверяем, не является ли чат каналом
+            if (chat.type._ === 'chatTypeSupergroup' && chat.type.is_channel) {
+              console.log(`[${this.sessionId}] Чат ${chat.title} (ID: ${chat.id}) является каналом, пропускаем`);
+              continue;
+            }
+            
+            // Проверяем, есть ли у нас права на отправку сообщений в этот чат
+            const chatFullInfo = await this.client.invoke({
+              _: 'getChatFullInfo',
+              chat_id: chat.id
+            });
+            
+            // Проверяем, имеем ли мы права для отправки сообщений
+            const canSendMessages = true; // По умолчанию считаем, что можем отправлять
+            
+            if (!canSendMessages) {
+              console.log(`[${this.sessionId}] Нет прав для отправки сообщений в чат ${chat.title} (ID: ${chat.id}), пропускаем`);
+              continue;
+            }
+            
+            // Отправляем сообщение
+            console.log(`[${this.sessionId}] Отправка сообщения в групповой чат ${chat.title} (ID: ${chat.id})`);
+            const result = await this.sendMessage(chat.id, text);
+            
+            // Добавляем ID чата в множество отправленных
+            this.sentGroupMessageChats.add(chat.id);
+            
+            results.push({ 
+              chatId: chat.id,
+              chatTitle: chat.title, 
+              success: true, 
+              result 
+            });
+          } catch (error) {
+            console.error(`[${this.sessionId}] Ошибка при отправке сообщения в групповой чат ${chat.id} (${chat.title}):`, error);
+            results.push({ 
+              chatId: chat.id,
+              chatTitle: chat.title,
+              success: false, 
+              error: error.message 
+            });
+          }
+        }
+      }
+      
+      console.log(`[${this.sessionId}] Отправка сообщений в групповые чаты завершена. Успешно: ${results.filter(r => r.success).length}, Ошибок: ${results.filter(r => !r.success).length}`);
+      return results;
+    } catch (error) {
+      console.error(`[${this.sessionId}] Ошибка при отправке массовых сообщений в групповые чаты:`, error);
+      throw error;
+    }
+  }
+  
   // Завершение сессии
   async logout() {
     try {
