@@ -11,16 +11,32 @@ if (!fs.existsSync(SESSIONS_DIR)) {
 
 // Поиск библиотеки TDLib
 function findTdLibPath() {
-  // Проверяем сначала в директории проекта
-  const localPath = path.resolve(__dirname, '../lib/libtdjson.dylib');
-  if (fs.existsSync(localPath)) {
+  // Определяем операционную систему
+  const os = require('os');
+  const platform = os.platform();
+  
+  // Сначала проверяем локальную директорию, но с учетом ОС
+  let localPath;
+  if (platform === 'darwin') {
+    localPath = path.resolve(__dirname, '../lib/libtdjson.dylib');
+  } else if (platform === 'linux') {
+    localPath = path.resolve(__dirname, '../lib/libtdjson.so');
+    // Проверяем также символическую ссылку для совместимости
+    if (!fs.existsSync(localPath)) {
+      const compatPath = path.resolve(__dirname, '../lib/libtdjson.dylib');
+      if (fs.existsSync(compatPath)) {
+        console.log('Найдена совместимая символическая ссылка:', compatPath);
+        return compatPath;
+      }
+    }
+  } else if (platform === 'win32') {
+    localPath = path.resolve(__dirname, '../lib/tdjson.dll');
+  }
+  
+  if (localPath && fs.existsSync(localPath)) {
     console.log('TDLib найден локально:', localPath);
     return localPath;
   }
-
-  // Проверяем разные варианты пути к библиотеке в зависимости от ОС
-  const os = require('os');
-  const platform = os.platform();
   
   // Пути для поиска библиотеки
   const possiblePaths = [];
@@ -36,7 +52,10 @@ function findTdLibPath() {
     possiblePaths.push(
       '/usr/local/lib/libtdjson.so',
       '/usr/lib/libtdjson.so',
-      path.resolve(os.homedir(), '.tdlib/lib/libtdjson.so')
+      '/usr/lib/x86_64-linux-gnu/libtdjson.so',
+      path.resolve(os.homedir(), '.tdlib/lib/libtdjson.so'),
+      // Проверяем также пути для совместимости с macOS
+      path.resolve(__dirname, '../lib/libtdjson.dylib')
     );
   } else if (platform === 'win32') { // Windows
     possiblePaths.push(
@@ -50,14 +69,20 @@ function findTdLibPath() {
   // Проверяем существование файлов
   for (const p of possiblePaths) {
     if (fs.existsSync(p)) {
-      console.log('TDLib path found:', p);
+      console.log('TDLib найден по пути:', p);
       return p;
     }
   }
   
   // Если не нашли, возвращаем имя библиотеки и надеемся, что она в системных путях
-  console.warn('TDLib library not found in expected locations, using default name');
-  return platform === 'win32' ? 'tdjson.dll' : 'libtdjson';
+  console.warn('TDLib не найден в ожидаемых местах, используем имя по умолчанию');
+  if (platform === 'win32') {
+    return 'tdjson.dll';
+  } else if (platform === 'darwin') {
+    return 'libtdjson.dylib';
+  } else {
+    return 'libtdjson.so';
+  }
 }
 
 // Класс для работы с TDLib

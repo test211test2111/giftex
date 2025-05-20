@@ -12,14 +12,38 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 
-// Функция для чтения ввода пользователя
-const question = (query) => {
-  return new Promise((resolve) => {
-    rl.question(query, (answer) => {
-      resolve(answer);
-    });
-  });
-};
+// Функция для получения ввода пользователя
+const question = (query) => new Promise((resolve) => rl.question(query, resolve));
+
+// Определяем путь к библиотеке TDLib в зависимости от ОС
+function getTDLibPath() {
+  const platform = process.platform;
+  let libPath;
+  
+  if (platform === 'darwin') {
+    libPath = path.resolve(__dirname, 'lib/libtdjson.dylib');
+  } else if (platform === 'linux') {
+    libPath = path.resolve(__dirname, 'lib/libtdjson.so');
+    if (!fs.existsSync(libPath)) {
+      // Проверяем символическую ссылку для совместимости
+      const compatPath = path.resolve(__dirname, 'lib/libtdjson.dylib');
+      if (fs.existsSync(compatPath)) {
+        libPath = compatPath;
+      } else {
+        // Проверяем системные пути
+        if (fs.existsSync('/usr/local/lib/libtdjson.so')) {
+          libPath = '/usr/local/lib/libtdjson.so';
+        } else if (fs.existsSync('/usr/lib/libtdjson.so')) {
+          libPath = '/usr/lib/libtdjson.so';
+        }
+      }
+    }
+  } else if (platform === 'win32') {
+    libPath = path.resolve(__dirname, 'lib/tdjson.dll');
+  }
+  
+  return libPath;
+}
 
 // Основная функция для запуска клиента
 async function runTelegramClient() {
@@ -32,7 +56,7 @@ async function runTelegramClient() {
   }
   
   // Путь к библиотеке TDLib
-  const libPath = path.resolve(__dirname, 'lib/libtdjson.dylib');
+  const libPath = getTDLibPath();
   if (!fs.existsSync(libPath)) {
     console.error('❌ Ошибка: Библиотека TDLib не найдена:', libPath);
     return false;

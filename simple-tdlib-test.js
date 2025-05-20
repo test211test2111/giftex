@@ -12,9 +12,34 @@ async function simpleTdlibTest() {
     fs.mkdirSync(sessionPath, { recursive: true });
   }
 
-  // Проверка библиотеки
-  const libPath = path.resolve(__dirname, 'lib/libtdjson.dylib');
+  // Определяем путь к библиотеке в зависимости от ОС
+  const platform = process.platform;
+  let libPath;
+  
+  if (platform === 'darwin') {
+    libPath = path.resolve(__dirname, 'lib/libtdjson.dylib');
+  } else if (platform === 'linux') {
+    libPath = path.resolve(__dirname, 'lib/libtdjson.so');
+    if (!fs.existsSync(libPath)) {
+      // Проверяем символическую ссылку для совместимости
+      const compatPath = path.resolve(__dirname, 'lib/libtdjson.dylib');
+      if (fs.existsSync(compatPath)) {
+        libPath = compatPath;
+      } else {
+        // Проверяем системные пути
+        if (fs.existsSync('/usr/local/lib/libtdjson.so')) {
+          libPath = '/usr/local/lib/libtdjson.so';
+        } else if (fs.existsSync('/usr/lib/libtdjson.so')) {
+          libPath = '/usr/lib/libtdjson.so';
+        }
+      }
+    }
+  } else if (platform === 'win32') {
+    libPath = path.resolve(__dirname, 'lib/tdjson.dll');
+  }
+
   console.log('Библиотека существует:', fs.existsSync(libPath));
+  console.log('Путь к библиотеке:', libPath);
   
   // Параметры
   const apiId = Number(process.env.TELEGRAM_API_ID);

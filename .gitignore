@@ -1,4 +1,5 @@
 # Зависимости
+td/
 node_modules/
 /package-lock.json
 /yarn.lock
@@ -32,3 +33,10 @@ yarn-error.log*
 # Системные файлы
 .DS_Store
 Thumbs.db td/
+
+*.log
+*.so
+*.dylib
+*.dll
+*.zip
+*.tar.gz
